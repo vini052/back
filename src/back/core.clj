@@ -5,6 +5,10 @@
             [cheshire.core :as json]))
 
 (def apostas (atom []))
+(def id-aposta (atom 0))
+
+(defn gerar-id-unico []
+  (swap! id-aposta inc))
 
 (defn listar-apostas []
   {:status 200
@@ -12,15 +16,16 @@
    :body (json/encode @apostas)})
 
 (defn deletar-aposta [id]
-  (swap! apostas #(remove (fn [aposta] (= (:idJogo aposta) id)) %))
+  (swap! apostas #(remove (fn [aposta] (= (:id aposta) (Integer/parseInt id))) %))
   {:status 200
    :body "Aposta removida com sucesso!"})
 
 (defroutes app
   (GET "/apostas" [] (listar-apostas))
   (POST "/aposta" req
-    (let [dados (json/decode (slurp (:body req)) true)]
-      (swap! apostas conj dados)
+    (let [dados (json/decode (slurp (:body req)) true)
+          aposta-com-id (assoc dados :id (gerar-id-unico))]
+      (swap! apostas conj aposta-com-id)
       {:status 200
        :body "Aposta criada com sucesso!"}))
   (DELETE "/aposta/:id" [id]
